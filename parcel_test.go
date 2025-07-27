@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -31,9 +32,11 @@ func getTestParcel() Parcel {
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 	defer db.Close()
+	err = initDB(db)
+	require.NoError(t, err)
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -60,13 +63,27 @@ func TestAddGetDelete(t *testing.T) {
 	_, err = store.Get(id)
 	require.Error(t, err)
 }
+func initDB(db *sql.DB) error {
+	_, err := db.Exec(`
+        CREATE TABLE IF NOT EXISTS parcel (
+            number INTEGER PRIMARY KEY AUTOINCREMENT,
+            client INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            address TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    `)
+	return err
+}
 
 // TestSetAddress проверяет обновление адреса
 func TestSetAddress(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 	defer db.Close()
+	err = initDB(db)
+	require.NoError(t, err)
 
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
@@ -90,10 +107,11 @@ func TestSetAddress(t *testing.T) {
 // TestSetStatus проверяет обновление статуса
 func TestSetStatus(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 	defer db.Close()
-
+	err = initDB(db)
+	require.NoError(t, err)
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 	// add
@@ -115,10 +133,11 @@ func TestSetStatus(t *testing.T) {
 // TestGetByClient проверяет получение посылок по идентификатору клиента
 func TestGetByClient(t *testing.T) {
 	// prepare
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 	defer db.Close()
-
+	err = initDB(db)
+	require.NoError(t, err)
 	store := NewParcelStore(db)
 
 	parcels := []Parcel{
